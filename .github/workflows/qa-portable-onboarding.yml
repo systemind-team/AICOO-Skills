@@ -1,0 +1,21 @@
+name: Preview onboarding package
+on:
+  push:
+    branches: [qa/onboarding-pr12]
+permissions:
+  contents: read
+jobs:
+  installation:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/__tests__/d2-contract.test.mjs
+      - run: node --check scripts/aicoo-request.mjs
+      - run: node scripts/qa-clean-onboarding.mjs
