@@ -10,6 +10,7 @@
  * OAuth credentials are resolved by aicoo-token.mjs and never printed.
  */
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,7 +103,7 @@ async function main() {
   const result = await performRequest({
     method,
     path,
-    bodyInput,
+    bodyInput: bodyInput?.startsWith('@') ? readFileSync(bodyInput.slice(1), 'utf8').replace(/^\uFEFF/, '') : bodyInput,
   });
 
   if (result.output) console.log(result.output);

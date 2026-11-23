@@ -13,15 +13,16 @@ Create and manage secure, shareable links to a user's agent.
   also accepted
 - Base URL: `https://www.aicoo.io/api/v1`
 - User should sync context first
-- Command examples use `${AICOO_API_KEY:-$PULSE_API_KEY}` for backward compatibility
+- Run the examples from the installed skills directory. The request helper uses your OAuth session or the configured automation key.
 
 ## Core Workflow
 
 ### 1) Check context exists
 
+On Windows PowerShell, save a JSON body as UTF-8 and pass `@payload.json` as a quoted argument. The helper reads the file directly.
+
 ```bash
-curl -s -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  "https://www.aicoo.io/api/v1/os/status" | jq .
+node scripts/aicoo-request.mjs GET 'os/status'
 ```
 
 If `contextCount` is 0, run `context-sync` first.
@@ -29,17 +30,14 @@ If `contextCount` is 0, run `context-sync` first.
 ### 2) Create a share link (OS endpoint)
 
 ```bash
-curl -s -X POST "https://www.aicoo.io/api/v1/os/share" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
+node scripts/aicoo-request.mjs POST 'os/share' '{
     "scope":"all",
     "access":"read",
     "notesAccess":"read",
     "label":"For investors",
     "expiresIn":"7d",
     "requireSignIn":true
-  }' | jq .
+  }'
 ```
 
 ### 3) Confirm to user
@@ -80,43 +78,33 @@ Default behavior: new links require sign-in (`requireSignIn:true`). Only set `re
 ### List links + visitors + contacts
 
 ```bash
-curl -s -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  "https://www.aicoo.io/api/v1/os/network" | jq .
+node scripts/aicoo-request.mjs GET 'os/network'
 ```
 
 ### Update/revoke link (canonical OS endpoints)
 
 ```bash
 # update
-curl -s -X PATCH "https://www.aicoo.io/api/v1/os/share/{linkId}" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{"notesAccess":"write","expiresIn":"30d","requireSignIn":true}' | jq .
+node scripts/aicoo-request.mjs PATCH 'os/share/{linkId}' '{"notesAccess":"write","expiresIn":"30d","requireSignIn":true}'
 
 # revoke
-curl -s -X DELETE "https://www.aicoo.io/api/v1/os/share/{linkId}" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" | jq .
+node scripts/aicoo-request.mjs DELETE 'os/share/{linkId}'
 ```
 
 ### List links with analytics
 
 ```bash
-curl -s -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  "https://www.aicoo.io/api/v1/os/share/list?status=active&limit=20" | jq .
+node scripts/aicoo-request.mjs GET 'os/share/list?status=active&limit=20'
 ```
 
 ## Folder-Scoped Share Example
 
 ```bash
 # inspect folders first
-curl -s -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  "https://www.aicoo.io/api/v1/os/folders" | jq .
+node scripts/aicoo-request.mjs GET 'os/folders'
 
 # create folder-scoped link
-curl -s -X POST "https://www.aicoo.io/api/v1/os/share" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{"scope":"folders","folderIds":[5,12],"access":"read","notesAccess":"write","label":"Team collaborator","requireSignIn":true}' | jq .
+node scripts/aicoo-request.mjs POST 'os/share' '{"scope":"folders","folderIds":[5,12],"access":"read","notesAccess":"write","label":"Team collaborator","requireSignIn":true}'
 ```
 
 ## Per-Link Policy Editing
@@ -125,16 +113,10 @@ Link notes are stored in `links/` folder. Edit policy by searching notes then pa
 
 ```bash
 # find link policy note
-curl -s -X POST "https://www.aicoo.io/api/v1/os/notes/search" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"For-Investors"}' | jq .
+node scripts/aicoo-request.mjs POST 'os/notes/search' '{"query":"For-Investors"}'
 
 # edit policy note content
-curl -s -X PATCH "https://www.aicoo.io/api/v1/os/notes/123" \
-  -H "Authorization: Bearer ${AICOO_API_KEY:-$PULSE_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{"content":"...\n\n## Policy\n\nBe professional, concise, and do not disclose confidential numbers."}' | jq .
+node scripts/aicoo-request.mjs PATCH 'os/notes/123' '{"content":"...\n\n## Policy\n\nBe professional, concise, and do not disclose confidential numbers."}'
 ```
 
 ## Security Notes

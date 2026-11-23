@@ -183,16 +183,16 @@ Narrate it as building memory — write the identity files and the knowledge.
 Use `accumulate` with `Memory/...` paths (the root-space router puts them in
 the right place):
 
+On Windows PowerShell, save a JSON body as UTF-8 and pass `@payload.json` as a quoted argument. The helper reads the file directly.
+
 ```bash
-curl -s -X POST "https://www.aicoo.io/api/v1/accumulate" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{
+node "$REQUEST" POST 'accumulate' '{
     "files": [
       {"path": "Memory/Self/USER.md",   "content": "# Who You Are\n\n## Role\n...\n## Current Work\n...\n## Expertise\n..."},
       {"path": "Memory/Self/COO.md",    "content": "# Your Agent\n\n## Voice & style\n...\n## How to help\n..."},
       {"path": "Memory/Self/MEMORY.md", "content": "# Long-term Memory\n\n## Key facts\n- ...\n## Projects\n- ...\n## Preferences\n- ..."}
     ]
-  }' | jq '{created, updated, workspace}'
+  }'
 ```
 
 For the **team track**, also write the knowledge base into its own folder so
@@ -200,13 +200,11 @@ it can be shared as a unit (e.g. `Knowledge Base/architecture.md`,
 `Knowledge Base/decisions.md`, `Knowledge Base/ownership.md`):
 
 ```bash
-curl -s -X POST "https://www.aicoo.io/api/v1/accumulate" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{"files": [
+node "$REQUEST" POST 'accumulate' '{"files": [
     {"path": "Knowledge Base/architecture.md", "content": "..."},
     {"path": "Knowledge Base/decisions.md",    "content": "..."},
     {"path": "Knowledge Base/ownership.md",     "content": "# Who owns what\n- ..."}
-  ]}' | jq '{created, updated}'
+  ]}'
 ```
 
 ### 1c. The aha — prove the agent remembers
@@ -215,9 +213,7 @@ Two ways, pick what fits:
 
 ```bash
 # Search the memory you just built
-curl -s -X POST "https://www.aicoo.io/api/v1/os/memory/search" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{"query": "what am I working on", "maxResults": 5}' | jq '.result.results'
+node "$REQUEST" POST 'os/memory/search' '{"query": "what am I working on", "maxResults": 5}'
 ```
 
 Or (stronger): after Phase 2 gives you a share link, talk to your *own* agent
@@ -238,10 +234,7 @@ Both tracks use `POST /api/v1/os/share`; they differ in scope.
 ### Personal — share your agent
 
 ```bash
-curl -s -X POST "https://www.aicoo.io/api/v1/os/share" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{"scope":"all","access":"read","notesAccess":"read","label":"My agent","requireSignIn":true}' \
-  | jq '{url: .shareLink.url, token: .shareLink.token}'
+node "$REQUEST" POST 'os/share' '{"scope":"all","access":"read","notesAccess":"read","label":"My agent","requireSignIn":true}'
 ```
 
 Present:
@@ -258,14 +251,10 @@ everything:
 
 ```bash
 # Find the folder id
-curl -s "https://www.aicoo.io/api/v1/os/folders" \
-  -H "Authorization: Bearer $AICOO_API_KEY" | jq '.folders[] | select(.name=="Knowledge Base") | {id,name}'
+node "$REQUEST" GET 'os/folders'
 
 # Share scoped to that folder
-curl -s -X POST "https://www.aicoo.io/api/v1/os/share" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{"scope":"folders","folderIds":[<id>],"access":"read","notesAccess":"read","label":"Team knowledge base","requireSignIn":true}' \
-  | jq '{url: .shareLink.url}'
+node "$REQUEST" POST 'os/share' '{"scope":"folders","folderIds":[<id>],"access":"read","notesAccess":"read","label":"Team knowledge base","requireSignIn":true}'
 ```
 
 Present the `/a/<token>` link: teammates (and their agents) can now ask the
@@ -310,8 +299,7 @@ Requires the `os.team:write` scope and that the caller owns/admins a Team
 plan. First check team status:
 
 ```bash
-curl -s "https://www.aicoo.io/api/v1/os/team" \
-  -H "Authorization: Bearer $AICOO_API_KEY" | jq '{hasTeam, canInvite, seats: .team.seatsAvailable}'
+node "$REQUEST" GET 'os/team'
 ```
 
 - `hasTeam:false` → the user isn't on a Team plan. Point them to
@@ -325,9 +313,7 @@ Then create a reusable link invite (omit `email` for a link anyone can use, or
 set it to email that specific person and send them the link too):
 
 ```bash
-curl -s -X POST "https://www.aicoo.io/api/v1/os/team/invite" \
-  -H "Authorization: Bearer $AICOO_API_KEY" -H "Content-Type: application/json" \
-  -d '{"role":"member"}' | jq '{inviteUrl, emailDelivered}'
+node "$REQUEST" POST 'os/team/invite' '{"role":"member"}'
 ```
 
 Present the `inviteUrl` (`https://www.aicoo.io/team/invites/<token>`). It's
